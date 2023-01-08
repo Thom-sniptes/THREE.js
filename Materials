@@ -1,3 +1,7 @@
+/////Farbe angeben
+const material = new THREE.MeshBasicMaterial({color : 0xff0000})
+
+
 //Loding Manager Overview
 const loadingManager = new THREE.LoadingManager()
 loadingManager.onStart = () =>
@@ -47,4 +51,19 @@ colortexture.minFilter=THREE.NearestFilter
 colortexture.magFilter=THREE.NearestFilter
 
 //////////////////////////////////////////////////////////////////////////
-//Textur o objakt
+//textures
+const textureLoader= new THREE.TextureLoader
+
+const doorColorTexture = textureLoader.load ('/textures/door/color.jpg')
+const doorAlphaTexture = textureLoader.load ('/textures/door/alpha.jpg')
+const doorAOTexture = textureLoader.load ('/textures/door/ambientOcclusion.jpg')
+const doorHeightTexture = textureLoader.load ('/textures/door/height.jpg')
+const doorNormalTexture = textureLoader.load ('/textures/door/normal.jpg')
+const doorMetalnessTexture = textureLoader.load ('/textures/door/metalness.jpg')
+const doorRougnessTexture = textureLoader.load ('/textures/door/roughness.jpg')
+const doorGradientTexture = textureLoader.load ('/textures/gradients/3.jpg')
+const doorMatcapTexture = textureLoader.load ('/textures/matcaps/1.png')
+//Objekte
+
+const material = new THREE.MeshBasicMaterial({map:doorColorTexture})
+material.side = THREE.DoubleSide
