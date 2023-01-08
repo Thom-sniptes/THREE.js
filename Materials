@@ -1,0 +1,7 @@
+// TextureLoader
+const textureLoader = new THREE.TextureLoader()
+const texture = textureLoader.load('/textures/door/ambientOcclusion.jpg')
+
+
+//texture on Object
+const material = new THREE.MeshBasicMaterial({ map : texture })
