@@ -1,0 +1,99 @@
+///////////////////////////////////////////////////////////////////////////////////////textures loading
+const textureLoader= new THREE.TextureLoader
+const cubeTextureLoader = new THREE.CubeTextureLoader()
+
+const doorColorTexture = textureLoader.load ('/textures/door/color.jpg')
+const doorAlphaTexture = textureLoader.load ('/textures/door/alpha.jpg')
+const doorAOTexture = textureLoader.load ('/textures/door/ambientOcclusion.jpg')
+const doorHeightTexture = textureLoader.load ('/textures/door/height.jpg')
+const doorNormalTexture = textureLoader.load ('/textures/door/normal.jpg')
+const doorMetalnessTexture = textureLoader.load ('/textures/door/metalness.jpg')
+const doorRougnessTexture = textureLoader.load ('/textures/door/roughness.jpg')
+const doorGradientTexture = textureLoader.load ('/textures/gradients/5.jpg')
+const doorMatcapTexture = textureLoader.load ('/textures/matcaps/1.png')
+
+/////////////////////////////////////////////////////////////////////////////////////////////Enviroent Loader
+const environmentMapTexture = cubeTextureLoader.load([
+    'textures/environmentMaps/0/px.jpg',
+    'textures/environmentMaps/0/nx.jpg',
+    'textures/environmentMaps/0/py.jpg',
+    'textures/environmentMaps/0/nx.jpg',
+    'textures/environmentMaps/0/pz.jpg',
+    'textures/environmentMaps/0/nz.jpg'
+])
+
+//Materials Shader
+////////////////////////////////////////////////////////////////////////////////////////////Standart Material
+// const material = new THREE.MeshBasicMaterial()
+// material.map = doorColorTexture
+// // material.color = new THREE.Color(0x2222ff)
+// material.side = THREE.DoubleSide
+// // material.wireframe = true
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+// material.wireframe = false
+
+
+/////////////////////////////////////////////////////////////////////////////////MAterial das sich imer zur kamera ausrichtet
+// const material2 = new THREE.MeshMatcapMaterial()
+// // material2.flatShading = false
+// material2.matcap = doorMatcapTexture
+
+
+//////////////////////////////////////////////////////////////////////////////// Sehr performantes Material
+// const material = new THREE.MeshLambertMaterial()
+// material.side = THREE.DoubleSide
+
+////////////////////////////////////////////////////////////////////////////// Sehr gute schatierung im Material
+// const material = new THREE.MeshPhongMaterial()
+// material.shiness = 0
+// material.specular = new THREE.Color(0xffffff)
+
+
+///////////////////////////////////////////////////////////////////////////////Toon optic
+////////////////////////////////////////////////////////////////////////////// mit einem gradienten von 3 pixeln und den min/mag filter kann man schatierungen besser kontrolieren
+// const material = new THREE.MeshToonMaterial()
+// material.gradientMap= doorGradientTexture
+////////////////////////////////////////////////////////////////////////////// filter um toon effekt wieder herstellen
+// doorGradientTexture.generateMipmaps = false
+// doorGradientTexture.minFilter = THREE.NearestFilter
+// doorGradientTexture.magFilter = THREE.NearestFilter
+
+///////////////////////////////////////////////////////////////////////////// Realisteisches Material
+const material = new THREE.MeshStandardMaterial()
+material.metalness = 0.7
+material.roughness= 0.2
+// material.map = doorColorTexture
+// material.aoMap = doorAOTexture
+// material.side = THREE.DoubleSide
+// material.metalnessMap = doorMetalnessTexture
+// material.metalness = 0.25
+// // material.displacementMap = doorHeightTexture
+// // material.displacementScale = 0.025
+// material.normalMap = doorNormalTexture
+// material.normalScale.set(5.5, 5.5)
+// material.transparent= true
+// material.alphaMap = doorAlphaTexture
+material.envMap=environmentMapTexture
+material.side = THREE.DoubleSide
+
+///////////////////////////////////////////////////////////////////////////////Intensitys
+material.aoMapIntensity = 2
+
+//creating Objects
+
+////////////////////////////////////////////////////////////////////////////////////////UV vergabe
+sphere.geometry.setAttribute('uv2', new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2))
+plane.geometry.setAttribute('uv2', new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2))
+torus.geometry.setAttribute('uv2', new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2))
+
+
+//Lichter
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+
+
+const pointLight = new THREE.PointLight(0xffffff, 0.5)
+pointLight.position.x =2
+pointLight.position.y =2
+pointLight.position.z =0.5
+scene.add(ambientLight, pointLight)
