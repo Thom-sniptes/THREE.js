@@ -1,0 +1,11 @@
+// Random Donat
+dounat.position.x = (Math.random() -
+dounat.position.z = (Math.random() -
+dounat.position.y = (Math.random() -
+
+dounat.rotation.x = Math.random() * 
+dounat.rotation.y = Math.random() * 
+
+const scale = Math.random()
+
+dounat.scale.set(scale, scale,scale)
