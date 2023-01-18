@@ -1,0 +1,5 @@
+///befor creating mesch or Loop
+
+console.time('name of Mesch')
+
+        console.timeEnd('name of Mesch')
