@@ -1,0 +1,3 @@
+//Axishelper
+const axesHelper = new THREE.AxesHelper
+scene.add(axesHelper)
