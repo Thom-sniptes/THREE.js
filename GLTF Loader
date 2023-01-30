@@ -1,0 +1,97 @@
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+//models
+const gltfLoader = new GLTFLoader()
+console.log(gltfLoader)
+gltfLoader.load(
+'./models/FlightHelmet/glTF/FlightHelmet.gltf',
+  // './models/3_Cherry_3-100.glb',
+   // '/models/Duck/glTF/Duck.gltf',
+    (gltf) =>
+    {
+        scene.add(gltf.scene.children[0])
+        console.log('success')
+        console.log(gltf)
+    }
+    )
+//////////////////gltf.scene.scale.set(0.025,0.025,0.025)/////////
+/////////models more objects
+    
+    (gltf) =>
+{
+    while(gltf.scene.children.length)
+    {
+        scene.add(gltf.scene.children[0])
+    }
+    console.log('success')
+    console.log(gltf)
+}
+
+/////Draco-Loader
+    import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+    
+    //// kopieren der Draco Lib in Static von
+    //// /node_modules/three/examples/js/libs/. Take the whole /draco/ folder and copy it into your /static/ folder. 
+    ////We can now provide the path to this folder to our dracoLoader:
+    
+    const dracoLoader = new DRACOLoader
+    dracoLoader.setDecoderPath('/draco/')
+    
+    //models
+const dracoLoader = new DRACOLoader
+dracoLoader.setDecoderPath('/draco/')
+
+
+'/models/Duck/glTF/Duck.gltf',
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+
+console.log(gltfLoader)
+gltfLoader.load(
+//'./models/FlightHelmet/glTF/FlightHelmet.gltf',
+  // './models/3_Cherry_3-100.glb',
+  '/models/Cherry/cherry1/3_Cherry_3-101.gltf',
+    (gltf) =>
+    {
+
+        scene.add(gltf.scene)
+
+
+
+        console.log('success')
+        console.log(gltf)
+    }
+)
+//////////////Animation////////////////
+//models
+const gltfLoader = new GLTFLoader()
+console.log(gltfLoader)
+
+let mixer=null
+
+gltfLoader.load(
+'./models/Fox/glTF/Fox.gltf',
+  // './models/3_Cherry_3-100.glb',
+   // '/models/Duck/glTF/Duck.gltf',
+    (gltf) =>
+    {         
+        
+       gltf.scene.scale.set(0.03, 0.03, 0.03)
+               scene.add(gltf.scene)
+       
+               mixer = new THREE.AnimationMixer(gltf.scene)
+
+               const action = mixer.clipAction(gltf.animations[0])
+               action.play()
+
+        console.log('success')
+        console.log(gltf)
+    }
+    ///Update Animation//////////////in tick funktion
+   ///Update Animation
+   if(mixer)
+   {
+       mixer.update(deltaTime)
+   }
+   // Update controls
