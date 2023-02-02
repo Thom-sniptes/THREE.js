@@ -1,3 +1,6 @@
 //Axishelper
 const axesHelper = new THREE.AxesHelper
 scene.add(axesHelper)
+
+//Light Helper
+const helper = new THREE.SpotLightHelper( rectAreaLight, 2 );
