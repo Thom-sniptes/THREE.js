@@ -1,0 +1,39 @@
+import * as THREE from 'three'
+
+// Scene
+const scene = new THREE.Scene()
+
+
+
+// Camera
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+camera.position.z = 3
+scene.add(camera)
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({
+    canvas: document.querySelector('canvas.webgl')
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.render(scene, camera)
+
+/**
+ * Animate
+ */
+const clock = new THREE.Clock()
+
+const tick = () =>
+{
+    const elapsedTime = clock.getElapsedTime()
+
+    // Update controls
+    //controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
