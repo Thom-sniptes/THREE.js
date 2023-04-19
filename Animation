@@ -32,3 +32,15 @@ import gsap from 'gsap'
 
 gsap.to(mesh.position, { duration: 1, delay: 1, x: 2 })
 
+
+
+////////////////////////////////////////  GLTF____ANIMATION  /////////////////////
+function animate() {
+    requestAnimationFrame(animate);
+    //child.rotation.y += 0.001; // Ändern S
+    child.rotation.y += 0.001
+    renderer.render(scene, camera);
+  }
+  animate();
+  
+ 
