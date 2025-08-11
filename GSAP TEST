@@ -1,0 +1,209 @@
+<script>
+(async function () {
+  // ---- KONFIG ----
+  const GL_TEST_OPTIONS = {
+    requireWebGL2: false,                 // true = WebGL2 Pflicht
+    allowSoftware: false,                 // true = Software-Renderer erlauben
+    minTextureSize: 4096,                 // Mindestgröße für MAX_TEXTURE_SIZE
+    requiredExtensions: [                 // wichtige Extensions
+      'OES_texture_float',
+      'OES_texture_half_float',
+      'OES_element_index_uint',
+      'WEBGL_depth_texture'
+    ],
+    softRendererHints: [                  // Strings, die auf Software hindeuten
+      'swiftshader','software','llvmpipe','softpipe','angle (software)'
+    ],
+    runMiniBenchmark: true,               // Mini-Benchmark an/aus
+    benchmarkMs: 120                      // ~Zeitbudget für Benchmark
+  };
+
+  function getGLContext() {
+    const c = document.createElement('canvas');
+    const attrs = { powerPreference: 'high-performance', failIfMajorPerformanceCaveat: true };
+    return c.getContext('webgl2', attrs)
+        || c.getContext('webgl', attrs)
+        || c.getContext('experimental-webgl', attrs)
+        || null;
+  }
+
+  function getRendererInfo(gl) {
+    let renderer = '', vendor = '';
+    try {
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      if (ext) {
+        renderer = (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
+        vendor   = (gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)   || '').toLowerCase();
+      }
+    } catch {}
+    return { renderer, vendor, combined: (renderer + ' ' + vendor).trim() };
+  }
+
+  function hasRequiredExtensions(gl, list) {
+    return list.every(name => !!gl.getExtension(name));
+  }
+
+  function getLimits(gl) {
+    const p = gl.getParameter.bind(gl);
+    // einige nützliche Limits
+    const MAX = {
+      MAX_TEXTURE_SIZE: p(gl.MAX_TEXTURE_SIZE),
+      MAX_CUBE_MAP_TEXTURE_SIZE: p(gl.MAX_CUBE_MAP_TEXTURE_SIZE),
+      MAX_RENDERBUFFER_SIZE: p(gl.MAX_RENDERBUFFER_SIZE),
+      MAX_VERTEX_ATTRIBS: p(gl.MAX_VERTEX_ATTRIBS),
+      MAX_VARYING_VECTORS: p(gl.MAX_VARYING_VECTORS || 0),
+      MAX_VERTEX_UNIFORM_VECTORS: p(gl.MAX_VERTEX_UNIFORM_VECTORS || 0),
+      MAX_FRAGMENT_UNIFORM_VECTORS: p(gl.MAX_FRAGMENT_UNIFORM_VECTORS || 0),
+    };
+    return MAX;
+  }
+
+  function looksLikeSoftware(info, hints) {
+    return hints.some(h => info.combined.includes(h));
+  }
+
+  // Mini‑Benchmark: ein paar einfache Draws + rAF-Zeit
+  async function miniBenchmark(gl, budgetMs = 120) {
+    const vs = `
+      attribute vec2 p; void main(){ gl_Position = vec4(p,0.0,1.0); }
+    `;
+    const fs = `precision mediump float; void main(){ gl_FragColor = vec4(1.0); }`;
+    function compile(type, src){
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    }
+    function makeProg(){
+      const pr = gl.createProgram();
+      gl.attachShader(pr, compile(gl.VERTEX_SHADER, vs));
+      gl.attachShader(pr, compile(gl.FRAGMENT_SHADER, fs));
+      gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+      return pr;
+    }
+    const prog = makeProg();
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    // zwei Dreiecke (Fullscreen Quad)
+    const data = new Float32Array([-1,-1,  1,-1, -1, 1,  -1,1,  1,-1,  1, 1]);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    const loc = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    const fb = document.createElement('canvas');
+    fb.width = fb.height = 256; // klein halten
+    const ctxAttrs = { powerPreference: 'high-performance', preserveDrawingBuffer: false };
+    const gl2 = fb.getContext(gl.canvas.getContextAttributes().majorVersion === 2 ? 'webgl2' : 'webgl', ctxAttrs) || gl;
+
+    const start = performance.now();
+    let frames = 0;
+    while (performance.now() - start < budgetMs) {
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      frames++;
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    return { frames, fpsApprox: frames / (budgetMs/1000) };
+  }
+
+  async function evaluateWebGL(opts = GL_TEST_OPTIONS) {
+    const gl = getGLContext();
+    if (!gl) return { ok:false, level:'none', reason:'no-context' };
+
+    const isWebGL2 = !!(gl instanceof WebGL2RenderingContext);
+    if (opts.requireWebGL2 && !isWebGL2) {
+      try { gl.getExtension('WEBGL_lose_context')?.loseContext(); } catch {}
+      return { ok:false, level:'weak', reason:'need-webgl2' };
+    }
+
+    const info = getRendererInfo(gl);
+    const software = looksLikeSoftware(info, opts.softRendererHints);
+    if (software && !opts.allowSoftware) {
+      try { gl.getExtension('WEBGL_lose_context')?.loseContext(); } catch {}
+      return { ok:false, level:'software', reason:'software-renderer', info };
+    }
+
+    const extsOK = hasRequiredExtensions(gl, opts.requiredExtensions);
+    const limits = getLimits(gl);
+    const sizeOK = limits.MAX_TEXTURE_SIZE >= opts.minTextureSize;
+
+    let bench = null;
+    if (opts.runMiniBenchmark) {
+      try { bench = await miniBenchmark(gl, opts.benchmarkMs); }
+      catch (e) { bench = { error: String(e) }; }
+    }
+
+    // einfache Heuristik fürs Level
+    let level = 'ok';
+    if (!extsOK || !sizeOK) level = 'weak';
+    if (software) level = 'software';
+    if (bench && bench.fpsApprox !== undefined) {
+      if (bench.fpsApprox >= 45 && level !== 'software') level = 'great';
+      else if (bench.fpsApprox < 25) level = 'weak';
+    }
+
+    return {
+      ok: level !== 'weak' && level !== 'none' && !(software && !opts.allowSoftware),
+      level,
+      isWebGL2,
+      extsOK,
+      sizeOK,
+      limits,
+      info,
+      bench
+    };
+  }
+
+  // ---- deine Visibility/Load-Logik darauf aufbauen ----
+  function toggleGPUSections(enable3D) {
+    const inc = document.getElementById('GPUIncluded');
+    const nog = document.getElementById('noGPU');
+    if (enable3D) {
+      if (inc) inc.style.display = '';
+      if (nog) nog.style.display = 'none';
+    } else {
+      if (inc) inc.style.display = 'none';
+      if (nog) nog.style.display = 'flex';
+    }
+  }
+
+  function loadThreeScene() {
+    const script = document.createElement('script');
+    script.src = 'https://thomasschumacher.de/03_ThreeJS/Main_01s.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  async function start() {
+    const result = await evaluateWebGL();
+    // Du hast jetzt: result.level = 'none'|'software'|'weak'|'ok'|'great'
+    toggleGPUSections(result.ok);
+    if (result.ok) loadThreeScene();
+
+    // optional: debug anzeigen
+    console.log('[WebGL check]', result);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+})();
+</script>
+
+
+/*
+requireWebGL2: setz es auf true, wenn deine Szene WebGL2 voraussetzt.
+
+minTextureSize: hebe es an (z. B. 8192), wenn du große Texturen nutzt.
+
+requiredExtensions: füge Extensions hinzu, die deine Szene braucht.
+
+runMiniBenchmark/benchmarkMs: Mini‑Benchmark ein/aus bzw. Dauer ändern.
+
+allowSoftware: auf true, wenn du zur Not Software‑Renderer zulassen willst.
+
+*/
